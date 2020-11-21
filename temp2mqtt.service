@@ -1,0 +1,16 @@
+[Unit]
+Description=Temperature Broadcast
+After=network.target
+StartLimitBurst=1
+StartLimitIntervalSec=10
+
+[Service]
+WorkingDirectory=/home/pi/
+ExecStart=/home/pi/venv-mqtt/bin/python3 /home/pi/heating/temp2mqtt/temp2mqtt/temp2mqtt.py
+KillMode=mixed
+Restart=on-failure
+RestartPreventExitStatus=255
+TimeoutStopSec=5
+
+[Install]
+WantedBy=default.target
