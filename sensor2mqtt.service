@@ -6,7 +6,7 @@ StartLimitIntervalSec=10
 
 [Service]
 WorkingDirectory=/home/pi/
-ExecStart=/home/pi/venv-mqtt/bin/python3 /home/pi/heating/temp2mqtt/temp2mqtt/temp2mqtt.py
+ExecStart=/home/pi/venv-mqtt/bin/python3 /home/pi/heating/sensor2mqtt/sensor2mqtt/MQTTBroadcast.py
 KillMode=mixed
 Restart=on-failure
 RestartPreventExitStatus=255

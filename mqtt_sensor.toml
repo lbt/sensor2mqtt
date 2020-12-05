@@ -1,0 +1,5 @@
+mqtt_host = "apple.dgreaves.com"
+username = "mqtt-test"
+password = "mqtt-test"
+ds18b20-pins = [ 3 ]
+debug = false

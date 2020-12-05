@@ -9,8 +9,8 @@ pip install toml gmqtt
 
 
 mkdir -p /home/pi/.config/systemd/user/default.target.wants/
-cp /home/pi/heating/temp2mqtt/temp2mqtt.service /home/pi/.config/systemd/user/temp2mqtt.service
-ln -s /home/pi/.config/systemd/user/temp2mqtt.service /home/pi/.config/systemd/user/default.target.wants/
+cp /home/pi/heating/sensor2mqtt/sensor2mqtt.service /home/pi/.config/systemd/user/sensor2mqtt.service
+ln -s /home/pi/.config/systemd/user/sensor2mqtt.service /home/pi/.config/systemd/user/default.target.wants/
 systemctl --user daemon-reload 
 
 sudo loginctl enable-linger pi
@@ -24,4 +24,6 @@ debug = false
 EOF
 
 
-systemctl --user start temp2mqtt
+systemctl --user start sensor2mqtt
+
+journalctl --user-unit sensor2mqtt.service 

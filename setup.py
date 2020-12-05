@@ -1,9 +1,9 @@
 from distutils.core import setup
 
 setup(
-    name='temp2mqtt',
+    name='sensor2mqtt',
     version='0.1dev',
-    packages=['temp2mqtt',],
+    packages=['sensor2mqtt',],
     scripts=['bin/broadcast_temps.py'],
     license='GPLv3',
     long_description="""
