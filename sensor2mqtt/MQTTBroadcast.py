@@ -11,6 +11,7 @@ from gmqtt.mqtt.constants import MQTTv311
 from DS18B20s import DS18B20s
 from PIR import PIR
 from Relays import Relays
+from Switches import Switches
 logger = logging.getLogger(__name__)
 
 
@@ -50,11 +51,12 @@ class SensorController:
             for pin in config["pir-pins"]:
                 logger.debug(f"Found PIR at pin {pin}")
                 pirs.add(PIR(self.mqtt, pin=pin))
-        else:
-            pirs = None                
 
         if "relay-pins" in config:
             relays = Relays(self, config["relay-pins"])
+
+        if "switch-pins" in config:
+            switches = Switches(self, config["switch-pins"])
 
         await stop_event.wait()    # This will wait until the client is signalled
         if probes:
@@ -102,9 +104,9 @@ if __name__ == "__main__":
     if "debug" in config and config["debug"]:
         lvl = logging.DEBUG
         logger.debug(f"Config file loaded:\n{config}")
-        modules = ["__main__", "PIR", "DS18B20s"]  #, "gmqtt"]
+        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]  #, "gmqtt"]
     else:
-        modules = ["__main__", "PIR", "DS18B20s"]
+        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]
         lvl = logging.INFO
 
     ch = logging.StreamHandler()
