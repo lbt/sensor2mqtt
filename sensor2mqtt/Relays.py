@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class Relay:
     def __init__(self, host, pin):
         self.topic = f"sensor/relay/{host}/{pin}"
-        self.dod = DigitalOutputDevice(pin=pin)
+        self.dod = DigitalOutputDevice(pin=pin, active_high=False, initial_value=False)
 
 
 class Relays:
@@ -22,7 +22,10 @@ class Relays:
         self.relays = {}
         for p in pins:
             logger.debug(f"Making Relay for pin {p}")
-            self.relays[p] = Relay(hostname, p)
+            # use a string key so we compare to topic string
+            r = Relay(hostname, p)
+            self.relays[str(p)] = r
+            self.controller.publish(r.topic, r.dod.value)
         controller.subscribe(f"control/relay/{hostname}/#")
         controller.add_handler(self.handle_message)
 
