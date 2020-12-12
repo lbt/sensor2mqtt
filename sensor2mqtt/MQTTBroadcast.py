@@ -102,9 +102,9 @@ if __name__ == "__main__":
     if "debug" in config and config["debug"]:
         lvl = logging.DEBUG
         logger.debug(f"Config file loaded:\n{config}")
-        modules = ("__main__", "PIR", "DS18B20s")  #, "gmqtt")
+        modules = ["__main__", "PIR", "DS18B20s"]  #, "gmqtt"]
     else:
-        modules = ("__main__", "PIR", "DS18B20s")
+        modules = ["__main__", "PIR", "DS18B20s"]
         lvl = logging.INFO
 
     ch = logging.StreamHandler()
