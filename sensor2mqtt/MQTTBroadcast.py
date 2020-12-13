@@ -49,7 +49,7 @@ class SensorController:
         if "pir-pins" in config:
             pirs = set()
             for pin in config["pir-pins"]:
-                logger.debug(f"Found PIR at pin {pin}")
+                logger.warn(f"Found PIR at pin {pin}")
                 pirs.add(PIR(self.mqtt, pin=pin))
 
         if "relay-pins" in config:

@@ -1,5 +1,5 @@
 [Unit]
-Description=Temperature Broadcast
+Description=Sensor MQQT Interface
 After=network.target
 StartLimitBurst=1
 StartLimitIntervalSec=10

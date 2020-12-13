@@ -22,7 +22,7 @@ class Switch:
         logger.debug(f"switch {self.topic} "
                      f"{'closed' if self.did.value else 'opened'}")
         self.loop.call_soon_threadsafe(self.controller.publish,
-                                       self.topic, self.did.value)
+                                       self.topic, bool(self.did.value))
 
 
 class Switches:

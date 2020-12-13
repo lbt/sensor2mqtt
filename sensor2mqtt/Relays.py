@@ -37,10 +37,10 @@ class Relays:
         pin = topics[1]
         if pin in self.relays:
             r = self.relays[pin]
-            val = int(payload)
+            val = bool(payload)
             logger.debug(f"Setting relay pin {pin} to {val}")
             r.dod.value = val
-            self.controller.publish(r.topic, r.dod.value)
+            self.controller.publish(r.topic, bool(r.dod.value))
         else:
             logger.warn(f"Attempt to control unknown relay on pin {pin}")
         return True
