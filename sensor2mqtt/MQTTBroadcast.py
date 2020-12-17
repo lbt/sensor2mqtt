@@ -49,11 +49,14 @@ class SensorController:
         if "pir-pins" in config:
             pirs = set()
             for pin in config["pir-pins"]:
-                logger.warn(f"Found PIR at pin {pin}")
+                logger.warning(f"Found PIR at pin {pin}")
                 pirs.add(PIR(self.mqtt, pin=pin))
 
         if "relay-pins" in config:
             relays = Relays(self, config["relay-pins"])
+
+        if "relay-inverted-pins" in config:
+            relays = Relays(self, config["relay-inverted-pins"], True)
 
         if "switch-pins" in config:
             switches = Switches(self, config["switch-pins"])
@@ -72,7 +75,7 @@ class SensorController:
         for h in self.handlers:
             if h(topic, payload):
                 return
-        logger.warn(f"Unhandled message {topic} = {payload}")
+        logger.warning(f"Unhandled message {topic} = {payload}")
 
     def subscribe(self, topic):
         if not topic in self.subscriptions:

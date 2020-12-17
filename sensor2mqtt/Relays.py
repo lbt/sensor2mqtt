@@ -10,22 +10,23 @@ logger = logging.getLogger(__name__)
 
 
 class Relay:
-    def __init__(self, host, pin):
-        self.topic = f"sensor/relay/{host}/{pin}"
-        self.dod = DigitalOutputDevice(pin=pin, active_high=False, initial_value=False)
+    def __init__(self, host, pin, inverted):
+        self.topic = f"sensor/gpiod/relay/{host}/{pin}"
+        self.dod = DigitalOutputDevice(pin=pin, active_high=not inverted,
+                                       initial_value=False)
 
 
 class Relays:
-    def __init__(self, controller, pins):
+    def __init__(self, controller, pins, inverted=False):
         self.controller = controller
         hostname = socket.gethostname()
         self.relays = {}
         for p in pins:
-            logger.debug(f"Making Relay for pin {p}")
+            logger.warning(f"Making Relay for pin {p}")
             # use a string key so we compare to topic string
-            r = Relay(hostname, p)
+            r = Relay(hostname, p, inverted)
             self.relays[str(p)] = r
-            self.controller.publish(r.topic, r.dod.value)
+            self.controller.publish(r.topic, bool(r.dod.value))
         controller.subscribe(f"control/relay/{hostname}/#")
         controller.add_handler(self.handle_message)
 
@@ -37,11 +38,10 @@ class Relays:
         pin = topics[1]
         if pin in self.relays:
             r = self.relays[pin]
-            val = bool(payload)
+            val = (payload.decode("utf-8") == "True")
             logger.debug(f"Setting relay pin {pin} to {val}")
             r.dod.value = val
             self.controller.publish(r.topic, bool(r.dod.value))
         else:
             logger.warn(f"Attempt to control unknown relay on pin {pin}")
         return True
-
