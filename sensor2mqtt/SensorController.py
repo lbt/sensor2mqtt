@@ -39,7 +39,12 @@ class SensorController:
         mqtt_version = MQTTv311
 
         # Connect to the broker
-        await self.mqtt.connect(mqtt_host, version=mqtt_version)
+        while not self.mqtt.is_connected:
+            try:
+                await self.mqtt.connect(mqtt_host, version=mqtt_version)
+            except Exception as e:
+                logger.warn(f"Error trying to connect: {e}. Retrying.")
+                await asyncio.sleep(1)
 
         # Setup our sensors
         if "ds18b20-pins" in self.config:
