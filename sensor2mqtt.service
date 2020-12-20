@@ -1,12 +1,12 @@
 [Unit]
-Description=Sensor MQQT Interface
+Description=Sensor MQTT Interface
 After=network.target
 StartLimitBurst=1
 StartLimitIntervalSec=10
 
 [Service]
 WorkingDirectory=/home/pi/
-ExecStart=/home/pi/venv-mqtt/bin/python3 /home/pi/heating/sensor2mqtt/sensor2mqtt/MQTTBroadcast.py
+ExecStart=/home/pi/venv-mqtt/bin/python3 /home/pi/heating/sensor2mqtt/sensor2mqtt.py
 KillMode=mixed
 Restart=on-failure
 RestartPreventExitStatus=255

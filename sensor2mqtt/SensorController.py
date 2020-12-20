@@ -7,22 +7,24 @@ import socket
 from gmqtt import Client as MQTTClient
 from gmqtt.mqtt.constants import MQTTv311
 
-from DS18B20s import DS18B20s
-from PIR import PIR
-from Relays import Relays
-from Switches import Switches
+from .DS18B20s import DS18B20s
+from .PIR import PIR
+from .Relays import Relays
+from .Switches import Switches
+
 logger = logging.getLogger(__name__)
 
 
 class SensorController:
-    def __init__(self):
+    def __init__(self, config):
         self.subscriptions = []
         self.handlers = []
+        self.config = config
 
     async def run(self):
         self.mqtt = MQTTClient(f"{socket.gethostname()}.{os.getpid()}")
-        self.mqtt.set_auth_credentials(username=config["username"],
-                                       password=config["password"])
+        self.mqtt.set_auth_credentials(username=self.config["username"],
+                                       password=self.config["password"])
 
         self.mqtt.on_connect = self.on_connect
         self.mqtt.on_message = self.on_message
@@ -33,40 +35,43 @@ class SensorController:
         loop.add_signal_handler(signal.SIGINT, self.ask_exit, stop_event)
         loop.add_signal_handler(signal.SIGTERM, self.ask_exit, stop_event)
 
-        mqtt_host = config["mqtt_host"]
+        mqtt_host = self.config["mqtt_host"]
         mqtt_version = MQTTv311
 
         # Connect to the broker
         await self.mqtt.connect(mqtt_host, version=mqtt_version)
 
         # Setup our sensors
-        if "ds18b20-pins" in config:
-            probes = DS18B20s(self.mqtt, pins=config["ds18b20-pins"])
+        if "ds18b20-pins" in self.config:
+            logger.warning(f"Found probe")
+            probes = DS18B20s(self.mqtt, pins=self.config["ds18b20-pins"])
         else:
             probes = None
 
-        if "pir-pins" in config:
+        if "pir-pins" in self.config:
             pirs = set()
-            for pin in config["pir-pins"]:
+            for pin in self.config["pir-pins"]:
                 logger.warning(f"Found PIR at pin {pin}")
                 pirs.add(PIR(self.mqtt, pin=pin))
 
         # Gather all our objects into collections so they persist for
         # the duration of the scope
-        if "relay-pins" in config:
-            relays = Relays(self, config["relay-pins"])
+        if "relay-pins" in self.config:
+            relays = Relays(self, self.config["relay-pins"])
 
-        if "relay-inverted-pins" in config:
-            irelays = Relays(self, config["relay-inverted-pins"], True)
+        if "relay-inverted-pins" in self.config:
+            irelays = Relays(self, self.config["relay-inverted-pins"], True)
 
-        if "switch-pins" in config:
-            switches = Switches(self, config["switch-pins"])
+        if "switch-pins" in self.config:
+            switches = Switches(self, self.config["switch-pins"])
 
         await stop_event.wait()    # This will wait until the client is signalled
+        logger.debug(f"stop received")
         if probes:
             await probes.stop()     # Tells the probe to stop periodics
         # pirs don't need any async waiting.
         await self.mqtt.disconnect()  # Disconnect after any last messages sent
+        logger.debug(f"client disconnected")
 
     def add_handler(self, handler):
         if handler not in self.handlers:
@@ -100,25 +105,3 @@ class SensorController:
     def ask_exit(self, stop_event):
         logger.warning("Client received signal and exiting")
         stop_event.set()
-
-
-if __name__ == "__main__":
-    import toml
-    config = toml.load("/home/pi/mqtt_sensor.toml")
-    if "debug" in config and config["debug"]:
-        lvl = logging.DEBUG
-        logger.debug(f"Config file loaded:\n{config}")
-        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]
-        # , "gmqtt"]
-    else:
-        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]
-        lvl = logging.INFO
-
-    ch = logging.StreamHandler()
-    ch.setLevel(lvl)
-    for l in modules:
-        logging.getLogger(l).addHandler(ch)
-        logging.getLogger(l).setLevel(lvl)
-
-    sensors = SensorController()
-    asyncio.run(sensors.run())
