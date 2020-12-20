@@ -1,10 +1,9 @@
-import sys
 import os
 import asyncio
 import signal
 import logging
 import socket
-        
+
 from gmqtt import Client as MQTTClient
 from gmqtt.mqtt.constants import MQTTv311
 
@@ -23,7 +22,7 @@ class SensorController:
     async def run(self):
         self.mqtt = MQTTClient(f"{socket.gethostname()}.{os.getpid()}")
         self.mqtt.set_auth_credentials(username=config["username"],
-                                  password=config["password"])
+                                       password=config["password"])
 
         self.mqtt.on_connect = self.on_connect
         self.mqtt.on_message = self.on_message
@@ -52,11 +51,13 @@ class SensorController:
                 logger.warning(f"Found PIR at pin {pin}")
                 pirs.add(PIR(self.mqtt, pin=pin))
 
+        # Gather all our objects into collections so they persist for
+        # the duration of the scope
         if "relay-pins" in config:
             relays = Relays(self, config["relay-pins"])
 
         if "relay-inverted-pins" in config:
-            relays = Relays(self, config["relay-inverted-pins"], True)
+            irelays = Relays(self, config["relay-inverted-pins"], True)
 
         if "switch-pins" in config:
             switches = Switches(self, config["switch-pins"])
@@ -68,7 +69,7 @@ class SensorController:
         await self.mqtt.disconnect()  # Disconnect after any last messages sent
 
     def add_handler(self, handler):
-        if not handler in self.handlers:
+        if handler not in self.handlers:
             self.handlers.append(handler)
 
     def on_message(self, client, topic, payload, qos, properties):
@@ -78,14 +79,14 @@ class SensorController:
         logger.warning(f"Unhandled message {topic} = {payload}")
 
     def subscribe(self, topic):
-        if not topic in self.subscriptions:
+        if topic not in self.subscriptions:
             self.subscriptions.append(topic)
             logger.debug(f"Subscribing to {topic}")
             self.mqtt.subscribe(topic)
 
     def on_connect(self, client, flags, rc, properties):
         for s in self.subscriptions:
-            logger.debug(f"Re-subscribing to {topic}")
+            logger.debug(f"Re-subscribing to {s}")
             self.mqtt.subscribe(s)
         logger.debug('Connected and subscribed')
 
@@ -107,7 +108,8 @@ if __name__ == "__main__":
     if "debug" in config and config["debug"]:
         lvl = logging.DEBUG
         logger.debug(f"Config file loaded:\n{config}")
-        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]  #, "gmqtt"]
+        modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]
+        # , "gmqtt"]
     else:
         modules = ["__main__", "Relays", "PIR", "DS18B20s", "Switches"]
         lvl = logging.INFO
