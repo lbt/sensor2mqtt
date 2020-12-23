@@ -105,7 +105,7 @@ class SensorController:
 
     def publish(self, topic, payload):
         logger.debug(f"Publishing {topic} = {payload}")
-        self.mqtt.publish(topic, payload, qos=2)
+        self.mqtt.publish(topic, payload, qos=2, retain=True)
 
     def ask_exit(self, stop_event):
         logger.warning("Client received signal and exiting")
