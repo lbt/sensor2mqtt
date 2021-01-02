@@ -10,14 +10,15 @@ import toml
 config = toml.load("/home/pi/mqtt_sensor.toml")
 if "debug" in config and config["debug"]:
     lvl = logging.DEBUG
-    modules = ["__main__", "SensorController", "sensor2mqtt.Relays",
-               "sensor2mqtt.PIR", "sensor2mqtt.DS18B20s",
-               "sensor2mqtt.Switches"]  # , "gmqtt"]
 else:
-    modules = ["__main__", "SensorController", "sensor2mqtt.Relays",
-               "sensor2mqtt.PIR", "sensor2mqtt.DS18B20s",
-               "sensor2mqtt.Switches"]
     lvl = logging.INFO
+modules = ["__main__",
+           "sensor2mqtt.SensorController",
+           "sensor2mqtt.DS18B20s",
+           "sensor2mqtt.Heating",
+           "sensor2mqtt.PIR",
+           "sensor2mqtt.Relays",
+           "sensor2mqtt.Switches"]
 
 ch = logging.StreamHandler()
 ch.setLevel(lvl)
