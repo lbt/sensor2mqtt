@@ -78,7 +78,7 @@ class DS18B20s:
                         yield (probe_file.name, None)
                 except Exception as e:
                     logger.warning(f"Exception {e} thrown "
-                                   "reading {probe_file.name}")
+                                   f"reading {probe_file.name}")
                     yield (probe_file.name, None)
 
 
