@@ -47,7 +47,7 @@ class SensorController:
         if "ds18b20-pins" in self.config:
             from .DS18B20s import DS18B20s
             logger.warning(f"Found probe")
-            probes = DS18B20s(self.mqtt, pins=self.config["ds18b20-pins"])
+            probes = DS18B20s(self, pins=self.config["ds18b20-pins"])
         else:
             probes = None
 
@@ -56,7 +56,7 @@ class SensorController:
             pirs = set()
             for pin in self.config["pir-pins"]:
                 logger.warning(f"Found PIR at pin {pin}")
-                pirs.add(PIR(self.mqtt, pin=pin))
+                pirs.add(PIR(self, pin=pin))
 
         # Gather all our objects into collections so they persist for
         # the duration of the scope
@@ -78,15 +78,15 @@ class SensorController:
                 heating = HeatingRelayManager(self, self.config["heating"])
                 await heating.init()
             except Exception as e:
-                    logger.warning(f"Exception {e}  thrown "
+                    logger.warning(f"Exception {e} thrown "
                                    f"creating HeatingRelayManager",
                                    exc_info=True)
+
         logger.debug(f"about to wait")
-        await stop_event.wait()    # This will wait until the client is signalled
+        await stop_event.wait()  # This will wait until the client is signalled
         logger.debug(f"stop received")
         if probes:
-            await probes.stop()     # Tells the probe to stop periodics
-        # pirs don't need any async waiting.
+            await probes.stop()  # Tells the probe to stop periodic task
         await self.mqtt.disconnect()  # Disconnect after any last messages sent
         logger.debug(f"client disconnected")
 
@@ -115,7 +115,7 @@ class SensorController:
     def on_disconnect(self, client, packet, exc=None):
         logger.debug('Disconnected')
 
-    def publish(self, topic, payload):
+    def publish(self, topic, payload, retain=True):
         logger.debug(f"Publishing {topic} = {payload}")
         self.mqtt.publish(topic, payload, qos=2, retain=True)
 

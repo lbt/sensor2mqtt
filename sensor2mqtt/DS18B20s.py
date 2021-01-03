@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 class DS18B20s:
-    def __init__(self, mqtt, pins, period=10):
-        self.mqtt = mqtt
+    def __init__(self, controller, pins, period=10):
+        self.controller = controller
         self.period = period
         self._task = asyncio.create_task(self.run())
         self.pullups = set()
@@ -25,27 +25,29 @@ class DS18B20s:
                 async for (serial, temp) in self.get_temp():
                     if serial not in probes:
                         logger.info(f"New probe seen at {serial}")
-                        self.mqtt.publish(f'info/w1/temperature/{serial}',
-                                          "New", qos=2)
+                        self.controller.publish(
+                            f'info/w1/temperature/{serial}',
+                            "New", retain=False)
                         probes.add(serial)
                     else:
                         notseen_probes.discard(serial)
 
                     # Publish anything we find
                     if temp:
-                        self.mqtt.publish(f'sensor/w1/temperature/{serial}',
-                                          temp, qos=2)
+                        self.controller.publish(
+                            f'sensor/w1/temperature/{serial}', temp)
                     else:
                         logger.warning(f"probe {serial} failed to read")
-                        self.mqtt.publish(f'alert/w1/temperature/{serial}',
-                                          "Failed to read temperature",
-                                          qos=2)
+                        self.controller.publish(
+                            f'alert/w1/temperature/{serial}',
+                            "Failed to read temperature",
+                            retain=False)
 
                 # After iterating over all probes warn about any that have gone
                 for serial in notseen_probes:
                     logger.warning(f"probe {serial} gone away")
-                    self.mqtt.publish(f'alert/w1/temperature/{serial}',
-                                      "Gone away", qos=2)
+                    self.controller.publish(f'alert/w1/temperature/{serial}',
+                                            "Gone away", retain=False)
                 probes = probes - notseen_probes
 
                 await asyncio.sleep(self.period)
