@@ -22,15 +22,26 @@ class ZoneValveRelay:
         self.control_topic = f"named/control/heating/zone/{zone.controls}"
         # announce_topic is what we announce our state on (after confirmation by switch)
         self.announce_topic = f"named/sensor/heating/zone/{zone.controls}"
-        # valve_topic is used to control our valve
-        self.valve_topic = f"named/control/relay/{zone.valve_relay.controls}"
         # heating_topic is used to control the heating relay (via the mgr)
         self.heating_topic = f"named/control/relay/{zone.heating_relay.controls}"
-        # If we have a switch then subscribe to the switch_topic to hear when we're active
+        
+        # If we don't have a valve relay then fake it
+        if zone.valve_relay is None:
+            self.has_valve_relay = False
+            self.valve_topic = ""
+        else:
+            self.has_valve_relay= True
+            # valve_topic is used to control our valve
+            self.valve_topic = f"named/control/relay/{zone.valve_relay.controls}"
+
+        # If we have a switch then subscribe to the switch_topic to
+        # hear when we're active
         if zone.valve_switch is None:
             self.has_valve_switch = False
             self.switch_topic = ""
         else:
+            if not self.has_valve_relay:
+                raise Exception("Can't have a valve switch without a relay")
             self.has_valve_switch = False
             self.switch_topic = ("named/sensor/switch"
                                  f"/{zone.valve_switch.operatedby}")
@@ -46,8 +57,9 @@ class ZoneValveRelay:
         if v == old:
             return False
         self.state = v
-        self.mgr.controller.publish(self.valve_topic, v)
-        if self.has_valve_switch is None:
+        if self.has_valve_relay:
+            self.mgr.controller.publish(self.valve_topic, v)
+        if not self.has_valve_switch:
             self.switchChanged(v)  # Fake a switch responding
         return True
 
@@ -118,9 +130,10 @@ class HeatingRelayManager:
             zv = ZoneValveRelay(self, zone)
             # Lookup zv by control message key
             self.zones_by_controls[zone.controls] = zv
-            # Lookup zv by switch message key
-            self.zones_by_switches[zone.valve_switch.operatedby] = zv
-            self.controller.subscribe(zv.switch_topic)
+            # Lookup zv by switch message key if it has one
+            if zone.valve_switch is not None:
+                self.zones_by_switches[zone.valve_switch.operatedby] = zv
+                self.controller.subscribe(zv.switch_topic)
         self.controller.subscribe(f"named/control/heating/zone/#")
         self.controller.add_handler(self.handle_message)
 
