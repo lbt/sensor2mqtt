@@ -22,6 +22,7 @@ modules = ["__main__",
 
 ch = logging.StreamHandler()
 ch.setLevel(lvl)
+ch.setFormatter(logging.Formatter("%(name)s : %(message)s"))
 for l in modules:
     logging.getLogger(l).addHandler(ch)
     logging.getLogger(l).setLevel(lvl)
