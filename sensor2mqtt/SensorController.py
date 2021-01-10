@@ -16,6 +16,47 @@ class SensorController:
         self.subscriptions = []
         self.handlers = []
         self.config = config
+        self.host = socket.gethostname()
+        self.cleanup_callbacks = set()
+
+    async def setup_sensors(self):
+        # Setup our sensors here so we can handle any exceptions in run()
+        if "ds18b20-pins" in self.config:
+            from .DS18B20s import DS18B20s
+            logger.warning(f"Found probe")
+            self.probes = DS18B20s(self, pins=self.config["ds18b20-pins"])
+            self.cleanup_callbacks.add(self.probes.stop)
+        else:
+            probes = None
+
+        if "pir-pins" in self.config:
+            from .PIR import PIR
+            self.pirs = set()
+            for pin in self.config["pir-pins"]:
+                logger.warning(f"Found PIR at pin {pin}")
+                self.pirs.add(PIR(self, pin=pin))
+
+        # Gather all our objects into collections so they persist for
+        # the duration of the scope
+        if "relay-pins" in self.config:
+            from .Relays import Relays
+            self.relays = Relays(self, self.config["relay-pins"])
+
+        if "relay-inverted-pins" in self.config:
+            from .Relays import Relays
+            self.irelays = Relays(self, self.config["relay-inverted-pins"], True)
+
+        if "switch-pins" in self.config:
+            from .Switches import Switches
+            self.switches = Switches(self, self.config["switch-pins"])
+
+        if "heating" in self.config:
+            import django
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'heating.settings')
+            django.setup()
+            from .Heating import HeatingRelayManager
+            self.heating = HeatingRelayManager(self, self.config["heating"])
+            await self.heating.init()
 
     async def run(self):
         self.mqtt = MQTTClient(f"{socket.gethostname()}.{os.getpid()}")
@@ -43,50 +84,18 @@ class SensorController:
                 logger.warn(f"Error trying to connect: {e}. Retrying.")
                 await asyncio.sleep(1)
 
-        # Setup our sensors
-        if "ds18b20-pins" in self.config:
-            from .DS18B20s import DS18B20s
-            logger.warning(f"Found probe")
-            probes = DS18B20s(self, pins=self.config["ds18b20-pins"])
-        else:
-            probes = None
+        try:
+            await self.setup_sensors()
+        except Exception as e:
+            logger.warning(f"Exception {e} thrown "
+                           f"creating sensors",
+                           exc_info=True)
 
-        if "pir-pins" in self.config:
-            from .PIR import PIR
-            pirs = set()
-            for pin in self.config["pir-pins"]:
-                logger.warning(f"Found PIR at pin {pin}")
-                pirs.add(PIR(self, pin=pin))
-
-        # Gather all our objects into collections so they persist for
-        # the duration of the scope
-        if "relay-pins" in self.config:
-            from .Relays import Relays
-            relays = Relays(self, self.config["relay-pins"])
-
-        if "relay-inverted-pins" in self.config:
-            from .Relays import Relays
-            irelays = Relays(self, self.config["relay-inverted-pins"], True)
-
-        if "switch-pins" in self.config:
-            from .Switches import Switches
-            switches = Switches(self, self.config["switch-pins"])
-
-        if "heating" in self.config:
-            try:
-                from .Heating import HeatingRelayManager
-                heating = HeatingRelayManager(self, self.config["heating"])
-                await heating.init()
-            except Exception as e:
-                    logger.warning(f"Exception {e} thrown "
-                                   f"creating HeatingRelayManager",
-                                   exc_info=True)
-
-        logger.debug(f"about to wait")
         await stop_event.wait()  # This will wait until the client is signalled
-        logger.debug(f"stop received")
-        if probes:
-            await probes.stop()  # Tells the probe to stop periodic task
+        logger.debug(f"Stop received, cleaning up")
+        for cb in self.cleanup_callbacks:
+            await cb()  # Eg tells the probes to stop
+
         await self.mqtt.disconnect()  # Disconnect after any last messages sent
         logger.debug(f"client disconnected")
 
@@ -127,5 +136,4 @@ class SensorController:
         # context["message"] will always be there; but context["exception"] may not
         msg = context.get("exception", context["message"])
         logger.error(f"Caught exception: {msg}", exc_info=True)
-        logger.info("Shutting down...")
         
