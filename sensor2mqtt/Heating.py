@@ -1,12 +1,9 @@
 import logging
-import os
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'heating.settings')
-django.setup()
 from baker.models import ZoneControl
 from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
+
 
 class ZoneValveRelay:
     """A ZoneValve is a sensor2mqtt proxy for a relay on a zone valve.
@@ -20,17 +17,19 @@ class ZoneValveRelay:
         self.controls = zone.controls
         # control_topic is what we respond to (unused; there's a wildcard)
         self.control_topic = f"named/control/heating/zone/{zone.controls}"
-        # announce_topic is what we announce our state on (after confirmation by switch)
+        # announce_topic is what we announce our state on (after
+        # confirmation by switch)
         self.announce_topic = f"named/sensor/heating/zone/{zone.controls}"
-        # heating_topic is used to control the heating relay (via the mgr)
+        # heating_topic is used to control the heating relay (via the
+        # mgr)
         self.heating_topic = f"named/control/relay/{zone.heating_relay.controls}"
-        
+
         # If we don't have a valve relay then fake it
         if zone.valve_relay is None:
             self.has_valve_relay = False
             self.valve_topic = ""
         else:
-            self.has_valve_relay= True
+            self.has_valve_relay = True
             # valve_topic is used to control our valve
             self.valve_topic = f"named/control/relay/{zone.valve_relay.controls}"
 
@@ -75,6 +74,7 @@ class ZoneValveRelay:
 
     def __repr__(self):
         return f"ZoneValveRelay({self.controls})"
+
 
 class ZoneOccupancy:
     """This is where Zone occupancy lives. It doesn't persist.
