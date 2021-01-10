@@ -1,6 +1,6 @@
 import asyncio
-import logging
 from gpiozero import MotionSensor
+import functools
 
 import logging
 logger = logging.getLogger(__name__)
@@ -19,10 +19,12 @@ class PIR:
 
     def motion(self):
         logger.debug(f"motion on pin {self.m_topic}")
-        self.loop.call_soon_threadsafe(self.controller.publish,
-                                       self.m_topic, True, retain=False)
+        self.loop.call_soon_threadsafe(functools.partial(
+            self.controller.publish,
+            self.m_topic, True, retain=False))
 
     def no_motion(self):
         logger.debug(f"no motion on pin {self.m_topic}")
-        self.loop.call_soon_threadsafe(self.controller.publish,
-                                       self.m_topic, False, retain=False)
+        self.loop.call_soon_threadsafe(functools.partial(
+            self.controller.publish,
+            self.m_topic, False, retain=False))
