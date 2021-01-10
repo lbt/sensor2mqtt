@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class DS18B20s:
-    def __init__(self, controller, pins, period=10):
+    def __init__(self, controller, pins, period=30):
         self.controller = controller
         self.period = period
         self._task = asyncio.create_task(self.run())
@@ -69,8 +69,8 @@ class DS18B20s:
                     # Hopefully the conversion is triggered on open
                     # and async.sleeping for a second will avoid blocking
                     # in the read()
-                    with open(f"{w1_path}/{probe_file.name}/w1_slave",
-                              "r") as f:
+                    path = f"{w1_path}/{probe_file.name}/w1_slave"
+                    with open(path, "r") as f:
                         await asyncio.sleep(1)
                         data = f.read()
                     if "YES" in data:
@@ -80,7 +80,7 @@ class DS18B20s:
                         yield (probe_file.name, None)
                 except Exception as e:
                     logger.warning(f"Exception {e} thrown "
-                                   f"reading {probe_file.name}")
+                                   f"reading {path}")
                     yield (probe_file.name, None)
 
 
