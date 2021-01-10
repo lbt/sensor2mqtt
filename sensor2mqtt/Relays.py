@@ -19,15 +19,15 @@ class Relay:
 class Relays:
     def __init__(self, controller, pins, inverted=False):
         self.controller = controller
-        hostname = socket.gethostname()
+        host = controller.host
         self.relays = {}
         for p in pins:
             logger.warning(f"Making Relay for pin {p}")
             # use a string key so we compare to topic string
-            r = Relay(hostname, p, inverted)
+            r = Relay(host, p, inverted)
             self.relays[str(p)] = r
             self.controller.publish(r.topic, bool(r.dod.value))
-        controller.subscribe(f"control/relay/{hostname}/#")
+        controller.subscribe(f"control/relay/{host}/#")
         controller.add_handler(self.handle_message)
 
     def handle_message(self, topic, payload):

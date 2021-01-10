@@ -1,5 +1,4 @@
 import asyncio
-import socket
 import logging
 from gpiozero import DigitalInputDevice
 
@@ -28,9 +27,9 @@ class Switch:
 class Switches:
     def __init__(self, controller, pins):
         self.controller = controller
-        hostname = socket.gethostname()
+        host = controller.host
         self.switchs = {}
         for p in pins:
             logger.debug(f"Making Switch for pin {p}")
             # use a string key so we compare to topic string
-            self.switchs[str(p)] = Switch(hostname, p, controller)
+            self.switchs[str(p)] = Switch(host, p, controller)
