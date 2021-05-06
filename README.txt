@@ -1,11 +1,22 @@
 
+sudo -i
+mkdir /everything
+echo "elm:/everything /everything nfs4 rw 0 0" >> /etc/fstab
+mount /everything
+exit
+
+ln -s /everything/devel/raspi/heating ~/
+
+
+echo "dtoverlay=w1-gpio,gpiopin=3" | sudo tee -a /boot/config.txt
+sudo reboot
+
+
+sudo apt-get --yes install python3-venv
+
 python3 -m venv ~/venv-mqtt --system-site-packages
 . ~/venv-mqtt/bin/activate
-pip install toml gmqtt
-
-
-
-
+pip install toml gmqtt gpiozero rpi.gpio
 
 
 mkdir -p /home/pi/.config/systemd/user/default.target.wants/
