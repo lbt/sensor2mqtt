@@ -18,37 +18,52 @@ class DS18B20s:
 
     async def run(self):
         # Maybe persist this so we don't have 'New' probes each run
-        probes = set()
+        probes = dict()
         try:
             while True:
-                notseen_probes = probes.copy()
+                # Make a list of probes we've not seen by starting
+                # with all of them and removing probes from this set
+                # when we see them
+                notseen_probes = set(probes.keys())
                 async for (serial, temp) in self.get_temp():
-                    if serial not in probes:
-                        logger.info(f"New probe seen at {serial}")
-                        self.controller.publish(
-                            f'info/w1/temperature/{serial}',
-                            "New", retain=False)
-                        probes.add(serial)
-                    else:
-                        notseen_probes.discard(serial)
 
-                    # Publish anything we find
-                    if temp:
-                        self.controller.publish(
-                            f'sensor/w1/temperature/{serial}', temp)
-                    else:
+                    # We've seen the probe - even if it's failed to
+                    # read and discard doesn't care if it's new
+                    notseen_probes.discard(serial)
+
+                    if temp is None:
                         logger.warning(f"probe {serial} failed to read")
                         self.controller.publish(
                             f'alert/w1/temperature/{serial}',
                             "Failed to read temperature",
                             retain=False)
+                        continue
+
+                    if serial not in probes:
+                        logger.info(f"New probe seen at {serial}")
+                        self.controller.publish(
+                            f'info/w1/temperature/{serial}',
+                            "New", retain=False)
+                        probes[serial] = None  # No old temp
+
+                    # Publish anything we find as a float
+                    if probes[serial] != temp:
+                        self.controller.publish(
+                            f'sensor/w1/temperature/{serial}',
+                            float(temp) / float(1000.0))
+                    else:
+                        logger.debug(f"Probe {serial} unchanged at {temp}")
+
+                    # Store the temp as the old temp
+                    probes[serial] = temp
 
                 # After iterating over all probes warn about any that have gone
                 for serial in notseen_probes:
                     logger.warning(f"probe {serial} gone away")
                     self.controller.publish(f'alert/w1/temperature/{serial}',
                                             "Gone away", retain=False)
-                probes = probes - notseen_probes
+
+                    del probes[serial]
 
                 await asyncio.sleep(self.period)
 
@@ -75,7 +90,7 @@ class DS18B20s:
                         data = f.read()
                     if "YES" in data:
                         (discard, sep, reading) = data.partition(' t=')
-                        yield (probe_file.name, float(reading) / float(1000.0))
+                        yield (probe_file.name, reading)
                     else:
                         yield (probe_file.name, None)
                 except Exception as e:
