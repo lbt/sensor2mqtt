@@ -10,11 +10,12 @@ class DS18B20s:
     def __init__(self, controller, pins, period=30):
         self.controller = controller
         self.period = period
-        self._task = asyncio.create_task(self.run())
         self.pullups = set()
         for p in pins:
             logger.debug(f"Setting pullup for pin {p}")
             self.pullups.add(InputDevice(pin=p, pull_up=True))
+        self._task = asyncio.create_task(self.run())
+        controller.add_cleanup_callback(self.stop)
 
     async def run(self):
         # Maybe persist this so we don't have 'New' probes each run
@@ -90,11 +91,11 @@ class DS18B20s:
                         data = f.read()
                     if "YES" in data:
                         (discard, sep, reading) = data.partition(' t=')
-                        yield (probe_file.name, reading)
+                        yield (probe_file.name, reading.rstrip())
                     else:
                         yield (probe_file.name, None)
                 except Exception as e:
-                    logger.warning(f"Exception {e} thrown "
+                    logger.warning(f"Exception '{e}' thrown "
                                    f"reading {path}")
                     yield (probe_file.name, None)
 

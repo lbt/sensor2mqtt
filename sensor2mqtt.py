@@ -28,5 +28,51 @@ for l in modules:
     logging.getLogger(l).setLevel(lvl)
 logger.debug(f"Config file loaded:\n{config}")
 
-sensors = SensorController(config)
-asyncio.run(sensors.run())
+
+async def main():
+    sensors = SensorController(config)
+    await sensors.connect()
+
+    # Gather all our objects into collections so they persist for
+    # the duration of the scope
+
+    try:
+        if "ds18b20-pins" in config:
+            from sensor2mqtt.DS18B20s import DS18B20s
+            probes = DS18B20s(sensors, pins=config["ds18b20-pins"])
+
+        if "pir-pins" in config:
+            from sensor2mqtt.PIR import PIR
+            pirs = set()
+            for pin in config["pir-pins"]:
+                logger.warning(f"Found PIR at pin {pin}")
+                pirs.add(PIR(sensors, pin=pin))
+
+        if "relay-pins" in config:
+            from sensor2mqtt.Relays import Relays
+            relays = Relays(sensors, config["relay-pins"])
+
+        if "relay-inverted-pins" in config:
+            from sensor2mqtt.Relays import Relays
+            irelays = Relays(sensors, config["relay-inverted-pins"], True)
+
+        if "switch-pins" in config:
+            from sensor2mqtt.Switches import Switches
+            switches = Switches(sensors, config["switch-pins"])
+
+        if "heating" in config:
+            import os
+            import django
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'heating.settings')
+            django.setup()
+            from sensor2mqtt.Heating import HeatingRelayManager
+            heating = HeatingRelayManager(sensors, config["heating"])
+            await heating.init()
+    except Exception as e:
+        logger.warning(f"Exception {e} whilst setting up")
+
+    await sensors.finish()
+    logger.warning(f"All done. Exiting")
+
+
+asyncio.run(main())
