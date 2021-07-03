@@ -5,6 +5,7 @@ import functools
 import logging
 logger = logging.getLogger(__name__)
 
+
 class PIR:
     def __init__(self, controller, pin, quiet=10):
         self.controller = controller
@@ -16,6 +17,7 @@ class PIR:
         self.pir.when_no_motion = self.no_motion
         self.loop = asyncio.get_running_loop()
         self.no_motion()
+        controller.add_cleanup_callback(self.pir.close)
 
     def motion(self):
         logger.debug(f"motion on pin {self.m_topic}")
