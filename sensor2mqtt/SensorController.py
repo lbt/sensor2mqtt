@@ -1,7 +1,8 @@
-import os
 import asyncio
-import signal
+import inspect
 import logging
+import os
+import signal
 import socket
 
 from gmqtt import Client as MQTTClient
@@ -51,7 +52,9 @@ class SensorController:
         await self.stop_event.wait()
         logger.debug(f"Stop received, cleaning up")
         for cb in self.cleanup_callbacks:
-            await cb()  # Eg tells the probes to stop
+            res = cb()
+            if inspect.isawaitable(res):
+                await res
 
         await self.mqtt.disconnect()  # Disconnect after any last messages sent
         logger.debug(f"client disconnected")
