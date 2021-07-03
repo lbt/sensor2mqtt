@@ -1,6 +1,7 @@
 import logging
-from baker.models import ZoneControl
+from django.apps import apps
 from asgiref.sync import sync_to_async
+from baker.models import ZoneControl
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,7 @@ class HeatingRelayManager:
         self.heating_users = {}  # keyed on a heating topic
         self.zones_by_controls = {}
         self.zones_by_switches = {}
+        controller.add_cleanup_callback(self.stop)
 
     async def init(self):
         zones = await sync_to_async(list)(
@@ -136,6 +138,13 @@ class HeatingRelayManager:
                 self.controller.subscribe(zv.switch_topic)
         self.controller.subscribe(f"named/control/heating/zone/#")
         self.controller.add_handler(self.handle_message)
+
+    def stop(self):
+        logger.debug(f"Heating. Stopping django publisher thread")
+        heatingconfig = apps.get_app_config("baker")
+        # This closes mqtt and waits for the the django publisher
+        # thread to join()
+        heatingconfig.shutdown()
 
     def setHeatingFor(self, user, v):
         heating = user.heating_topic
