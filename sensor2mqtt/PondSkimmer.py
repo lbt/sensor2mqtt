@@ -21,6 +21,10 @@ class PondSkimmer:
         self.controller.subscribe(self.control_topic)
         self.controller.add_handler(self.handle_message)
         self.controller.add_cleanup_callback(self.stop)
+
+        # Make sure the skimmer is running at startup
+        # just in case we restarted whilst it was off
+        self.turn_on()
         logger.debug(f"Set up skimmer")
 
     def stop(self):
