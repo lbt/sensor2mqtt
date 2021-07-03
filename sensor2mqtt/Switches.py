@@ -2,8 +2,8 @@ import asyncio
 import logging
 from gpiozero import DigitalInputDevice
 
-import logging
 logger = logging.getLogger(__name__)
+
 
 class Switch:
     def __init__(self, host, pin, controller):
@@ -31,5 +31,6 @@ class Switches:
         self.switchs = {}
         for p in pins:
             logger.debug(f"Making Switch for pin {p}")
-            # use a string key so we compare to topic string
-            self.switchs[str(p)] = Switch(host, p, controller)
+            s = Switch(host, p, controller)
+            self.switchs[str(p)] = s
+            controller.add_cleanup_callback(s.did.close)
