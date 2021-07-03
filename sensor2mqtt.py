@@ -13,10 +13,13 @@ if "debug" in config and config["debug"]:
 else:
     lvl = logging.INFO
 modules = ["__main__",
+           "gmqtt",
+           "baker",
            "sensor2mqtt.SensorController",
            "sensor2mqtt.DS18B20s",
            "sensor2mqtt.Heating",
            "sensor2mqtt.PIR",
+           "sensor2mqtt.PondSkimmer",
            "sensor2mqtt.Relays",
            "sensor2mqtt.Switches"]
 
@@ -37,28 +40,30 @@ async def main():
     # the duration of the scope
 
     try:
+        persistent_objects = set()
         if "ds18b20-pins" in config:
             from sensor2mqtt.DS18B20s import DS18B20s
-            probes = DS18B20s(sensors, pins=config["ds18b20-pins"])
+            persistent_objects.add(
+                DS18B20s(sensors, pins=config["ds18b20-pins"]))
 
         if "pir-pins" in config:
             from sensor2mqtt.PIR import PIR
-            pirs = set()
             for pin in config["pir-pins"]:
                 logger.warning(f"Found PIR at pin {pin}")
-                pirs.add(PIR(sensors, pin=pin))
+                persistent_objects.add(PIR(sensors, pin=pin))
 
         if "relay-pins" in config:
             from sensor2mqtt.Relays import Relays
-            relays = Relays(sensors, config["relay-pins"])
+            persistent_objects.add(Relays(sensors, config["relay-pins"]))
 
         if "relay-inverted-pins" in config:
             from sensor2mqtt.Relays import Relays
-            irelays = Relays(sensors, config["relay-inverted-pins"], True)
+            persistent_objects.add(
+                Relays(sensors, config["relay-inverted-pins"], True))
 
         if "switch-pins" in config:
             from sensor2mqtt.Switches import Switches
-            switches = Switches(sensors, config["switch-pins"])
+            persistent_objects.add(Switches(sensors, config["switch-pins"]))
 
         if "heating" in config:
             import os
@@ -68,6 +73,12 @@ async def main():
             from sensor2mqtt.Heating import HeatingRelayManager
             heating = HeatingRelayManager(sensors, config["heating"])
             await heating.init()
+            persistent_objects.add(heating)
+
+        if "skimmer" in config:
+            from sensor2mqtt.PondSkimmer import PondSkimmer
+            persistent_objects.add(PondSkimmer(sensors, config["skimmer"]))
+
     except Exception as e:
         logger.warning(f"Exception {e} whilst setting up")
 
