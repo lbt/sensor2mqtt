@@ -3,6 +3,7 @@ from django.apps import apps
 from asgiref.sync import sync_to_async
 from baker.models import ZoneControl
 from baker.mqtt import DjangoMQTTPublish
+import baker.apps
 logger = logging.getLogger(__name__)
 
 
@@ -141,9 +142,7 @@ class HeatingRelayManager:
 
     def stop(self):
         logger.debug(f"Heating. Stopping django publisher thread")
-        pub = DjangoMQTTPublish.getPublisherThread()
-        pub.ask_exit()
-        pub.join()
+        baker.apps.shutdown()
 
     def setHeatingFor(self, user, v):
         heating = user.heating_topic
