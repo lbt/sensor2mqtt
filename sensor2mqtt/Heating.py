@@ -78,31 +78,6 @@ class ZoneValveRelay:
         return f"ZoneValveRelay({self.controls})"
 
 
-class ZoneOccupancy:
-    """This is where Zone occupancy lives. It doesn't persist.
-    """
-    def __init__(self, mgr, zone):
-        self.control_topic = f"named/control/occupancy/zone/{zone.controls}"
-        self.announce_topic = f"named/sensor/occupancy/zone/{zone.controls}"
-        self.state = ZoneControl.Occupied.MAYBE
-        self.until = None
-        self.mgr = mgr
-
-    def occupiedUntil(self, v, until):
-        old = self.state
-        if v == old:
-            return False
-        else:
-            self.state = v
-            self.mgr.setFor(self, v)
-            self.mgr.controller.publish(self.announce_topic, v)
-            return True
-
-    @property
-    def occupied(self):
-        return self.state
-
-
 class HeatingRelayManager:
     """This is a logical interface to the heating system and zonevalve
     relays.  It notes who wants the heating on and keeps it on as long
