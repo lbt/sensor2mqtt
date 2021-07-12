@@ -60,6 +60,9 @@ class SensorController:
         logger.debug(f"client disconnected")
 
     def add_handler(self, handler):
+        '''A handler takes a topic/payload and returns true if it handles the
+        topic
+        '''
         if handler not in self.handlers:
             self.handlers.append(handler)
 
@@ -68,10 +71,12 @@ class SensorController:
             self.cleanup_callbacks.add(handler)
 
     def on_message(self, client, topic, payload, qos, properties):
+        handled = False
         for h in self.handlers:
             if h(topic, payload):
-                return  # what if a message is interesting to many handlers?
-        logger.warning(f"Just in case: Unhandled message {topic} = {payload}")
+                handled = True
+        if not handled:
+            logger.warning(f"Just in case: Unhandled message {topic} = {payload}")
 
     def subscribe(self, topic):
         if topic not in self.subscriptions:
