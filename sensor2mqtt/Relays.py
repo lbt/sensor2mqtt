@@ -1,11 +1,8 @@
-import socket
 import logging
-import re
 from gmqtt import Client as MQTTClient
 from gmqtt.mqtt.constants import MQTTv311
 from gpiozero import DigitalOutputDevice
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -17,16 +14,24 @@ class Relay:
 
 
 class Relays:
-    def __init__(self, controller, pins, inverted=False):
+    def __init__(self, controller, pins=None, inverted_pins=None):
         self.controller = controller
         host = controller.host
         self.relays = {}
-        for p in pins:
-            logger.warning(f"Making Relay for pin {p}")
-            # use a string key so we compare to topic string
-            r = Relay(host, p, inverted)
-            self.relays[str(p)] = r
-            self.controller.publish(r.topic, bool(r.dod.value))
+        if pins:
+            for p in pins:
+                logger.warning(f"Making Relay for pin {p}")
+                # use a string key so we compare to topic string
+                r = Relay(host, p, False)
+                self.relays[str(p)] = r
+                self.controller.publish(r.topic, bool(r.dod.value))
+        if inverted_pins:
+            for p in inverted_pins:
+                logger.warning(f"Making Relay for pin {p}")
+                # use a string key so we compare to topic string
+                r = Relay(host, p, True)
+                self.relays[str(p)] = r
+                self.controller.publish(r.topic, bool(r.dod.value))
         controller.subscribe(f"control/relay/{host}/#")
         controller.add_handler(self.handle_message)
 

@@ -51,15 +51,12 @@ async def main():
                 persistent_objects.add(
                     PIR(sensor_controller, pin=pin))
 
-        if "relay-pins" in config:
+        if "relay-pins" in config or "relay-inverted-pins" in config:
             from sensor2mqtt.Relays import Relays
             persistent_objects.add(
-                Relays(sensor_controller, config["relay-pins"]))
-
-        if "relay-inverted-pins" in config:
-            from sensor2mqtt.Relays import Relays
-            persistent_objects.add(
-                Relays(sensor_controller, config["relay-inverted-pins"], True))
+                Relays(sensor_controller,
+                       pins=config.get("relay-pins", None),
+                       inverted_pins=config.get("relay-inverted-pins", None)))
 
         if "switch-pins" in config:
             from sensor2mqtt.Switches import Switches
