@@ -27,7 +27,7 @@ systemctl --user daemon-reload
 sudo loginctl enable-linger pi
 
 cat <<EOF > ~/mqtt_sensor.toml
-mqtt_host = "apple.dgreaves.com"
+mqtt_host = "mqtt.dgreaves.com"
 username = "mqtt-test"
 password = "mqtt-test"
 ds18b20-pins = [ 3 ]
