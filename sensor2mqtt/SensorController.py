@@ -20,6 +20,7 @@ class SensorController:
         self.config = config
         self.host = socket.gethostname()
         self.cleanup_callbacks = set()
+        self.stop_event = asyncio.Event()
 
     async def connect(self):
         self.mqtt = MQTTClient(f"{socket.gethostname()}.{os.getpid()}")
@@ -30,7 +31,6 @@ class SensorController:
         self.mqtt.on_message = self.on_message
         self.mqtt.on_disconnect = self.on_disconnect
 
-        self.stop_event = asyncio.Event()
         self._loop.add_signal_handler(signal.SIGINT, self.ask_exit)
         self._loop.add_signal_handler(signal.SIGTERM, self.ask_exit)
         self._loop.set_exception_handler(self.handle_exception)
