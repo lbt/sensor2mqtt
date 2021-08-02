@@ -13,13 +13,11 @@ if "debug" in config and config["debug"]:
 else:
     lvl = logging.INFO
 modules = ["__main__",
-           "gmqtt",
+           #"gmqtt",
            "baker",
            "sensor2mqtt.SensorController",
            "sensor2mqtt.DS18B20s",
-           "sensor2mqtt.Heating",
            "sensor2mqtt.PIR",
-           "sensor2mqtt.PondSkimmer",
            "sensor2mqtt.Relays",
            "sensor2mqtt.Switches"]
 
@@ -67,21 +65,6 @@ async def main():
             from sensor2mqtt.Switches import Switches
             persistent_objects.add(
                 Switches(sensor_controller, config["switch-pins"]))
-
-        if "heating" in config:
-            import os
-            import django
-            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'heating.settings')
-            django.setup()
-            from sensor2mqtt.Heating import HeatingRelayManager
-            heating = HeatingRelayManager(sensor_controller, config["heating"])
-            await heating.init()
-            persistent_objects.add(heating)
-
-        if "skimmer" in config:
-            from sensor2mqtt.PondSkimmer import PondSkimmer
-            persistent_objects.add(PondSkimmer(
-                sensor_controller, config["skimmer"]))
 
     except Exception as e:
         logger.warning(f"Exception {e} whilst setting up")
