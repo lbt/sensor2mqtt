@@ -1,40 +1,42 @@
 
-sudo -i
-mkdir /everything
-echo "elm:/everything /everything nfs4 rw 0 0" >> /etc/fstab
-mount /everything
-exit
 
-ln -s /everything/devel/raspi/heating ~/
-
-
+# To setup one-wire for temp probes
 echo "dtoverlay=w1-gpio,gpiopin=3" | sudo tee -a /boot/config.txt
 sudo reboot
 
-
+# Prepare to install
 sudo apt-get --yes install python3-venv
 
 python3 -m venv ~/venv-mqtt --system-site-packages
 . ~/venv-mqtt/bin/activate
-pip install toml gmqtt gpiozero rpi.gpio
 
+pip install /everything/devel/raspi/sensor2mqtt/
 
+# Setup systemd service
 mkdir -p /home/pi/.config/systemd/user/default.target.wants/
-cp /home/pi/heating/sensor2mqtt/sensor2mqtt.service /home/pi/.config/systemd/user/sensor2mqtt.service
-ln -s /home/pi/.config/systemd/user/sensor2mqtt.service /home/pi/.config/systemd/user/default.target.wants/
+SYSTEMD_DIR=/home/pi/.config/systemd/user
+cp /everything/devel/raspi/sensor2mqtt/sensor2mqtt.service $SYSTEMD_DIR/sensor2mqtt.service
+ln -s $SYSTEMD_DIR/sensor2mqtt.service $SYSTEMD_DIR/default.target.wants/
 systemctl --user daemon-reload 
 
 sudo loginctl enable-linger pi
+
+# Configure
 
 cat <<EOF > ~/mqtt_sensor.toml
 mqtt_host = "mqtt.dgreaves.com"
 username = "mqtt-test"
 password = "mqtt-test"
-ds18b20-pins = [ 3 ]
 debug = false
+# ds18b20-pins = [ 3 ]
+# relay-pins = [ 27 ]
+# relay-inverted-pins = [17, 27, 22]
+# switch-pins = [10, 9, 11]
+# pir-pins = [ 17 ]
 EOF
 
-
+# Start it
 systemctl --user start sensor2mqtt
 
+# And watch
 journalctl --user-unit sensor2mqtt.service 
