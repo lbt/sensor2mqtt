@@ -117,8 +117,10 @@ class MQController:
         LOGGER.warning(f"{self} received signal asking to exit")
         self.stop_event.set()
 
-    def handle_exception(loop, context):
+    def handle_exception(self, _loop, context):
         # context["message"] will always be there; but
         # context["exception"] may not
+        import traceback
         msg = context.get("exception", context["message"])
         LOGGER.error(f"Caught exception: {msg}", exc_info=True)
+        LOGGER.error(traceback.format_tb(msg.__traceback__))

@@ -63,9 +63,13 @@ async def main():
             persistent_objects.add(
                 Switches(sensor_controller, config["switch-pins"]))
 
+        if len(persistent_objects) == 0:
+            logger.warning("No sensors configured")
+
     except Exception as e:
         logger.warning(f"Exception {e} whilst setting up")
 
+    logger.warning(f"Sensor controller running")
     await sensor_controller.finish()
     logger.warning(f"All done. Exiting")
 
