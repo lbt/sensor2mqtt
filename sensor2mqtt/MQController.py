@@ -13,6 +13,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MQController:
+    """An instance of this class is created and passed to objects
+    needing to interact with MQTT.
+
+    Essentially it abstracts all the setup, msg handling and cleanup
+    into one place.
+    """
     def __init__(self, config):
         self._loop = asyncio.get_event_loop()
         self.subscriptions = []
@@ -46,6 +52,25 @@ class MQController:
             except Exception as e:
                 LOGGER.warn(f"Error trying to connect: {e}. Retrying.")
                 await asyncio.sleep(1)
+
+    async def setup(self):
+        # Override to do any setup
+        pass
+
+    async def run(self):
+        """This connects to the mqtt (retrying forever) and waits until
+        :func:`ask_exit` is called at which point it exits cleanly.
+        """
+        await self.connect()
+
+        try:
+            await self.setup()
+        except Exception as e:
+            logger.warning(f"Exception {e} thrown "
+                           f"creating {self.__class__}",
+                           exc_info=True)
+
+        await self.finish()  # This will wait until the client is signalled
 
     async def finish(self):
         # This will wait until the client is signalled
