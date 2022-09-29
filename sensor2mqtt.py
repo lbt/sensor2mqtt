@@ -27,8 +27,7 @@ ch.setFormatter(logging.Formatter("%(name)s : %(message)s"))
 for l in modules:
     logging.getLogger(l).addHandler(ch)
     logging.getLogger(l).setLevel(lvl)
-logger.debug(f"Config file loaded:\n{config}")
-
+logger.debug("Config file loaded:\n%s", config)
 
 async def main():
     sensor_controller = SensorController(config)
@@ -47,7 +46,7 @@ async def main():
         if "pir-pins" in config:
             from sensor2mqtt.PIR import PIR
             for pin in config["pir-pins"]:
-                logger.warning(f"Found PIR at pin {pin}")
+                logger.warning("Found PIR at pin %s", pin)
                 persistent_objects.add(
                     PIR(sensor_controller, pin=pin))
 
@@ -67,11 +66,11 @@ async def main():
             logger.warning("No sensors configured")
 
     except Exception as e:
-        logger.warning(f"Exception {e} whilst setting up")
+        logger.warning("Exception %s whilst setting up", e)
 
-    logger.warning(f"Sensor controller running")
+    logger.warning("Sensor controller running")
     await sensor_controller.finish()
-    logger.warning(f"All done. Exiting")
+    logger.warning("All done. Exiting")
 
 
 asyncio.run(main())
