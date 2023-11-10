@@ -1,33 +1,12 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
+import toml
 
 from sensor2mqtt import SensorController
 
 logger = logging.getLogger(__name__)
 
-import toml
-config = toml.load("/home/pi/mqtt_sensor.toml")
-if "debug" in config and config["debug"]:
-    lvl = logging.DEBUG
-else:
-    lvl = logging.INFO
-modules = ["__main__",
-           #"gmqtt",
-           "baker",
-           "sensor2mqtt.SensorController",
-           "sensor2mqtt.DS18B20s",
-           "sensor2mqtt.PIR",
-           "sensor2mqtt.Relays",
-           "sensor2mqtt.Switches"]
-
-ch = logging.StreamHandler()
-ch.setLevel(lvl)
-ch.setFormatter(logging.Formatter("%(name)s : %(message)s"))
-for l in modules:
-    logging.getLogger(l).addHandler(ch)
-    logging.getLogger(l).setLevel(lvl)
-logger.debug("Config file loaded:\n%s", config)
 
 async def main():
     sensor_controller = SensorController(config)
@@ -85,4 +64,28 @@ async def main():
     logger.warning("All done. Exiting")
 
 
-asyncio.run(main())
+if __name__ == '__main__':
+
+    config = toml.load("/home/pi/mqtt_sensor.toml")
+    if "debug" in config and config["debug"]:
+        lvl = logging.DEBUG
+    else:
+        lvl = logging.INFO
+    modules = ["__main__",
+               #"gmqtt",
+               "baker",
+               "sensor2mqtt.SensorController",
+               "sensor2mqtt.TSL2561",
+               "sensor2mqtt.DS18B20s",
+               "sensor2mqtt.PIR",
+               "sensor2mqtt.Relays",
+               "sensor2mqtt.Switches"]
+
+    ch = logging.StreamHandler()
+    ch.setLevel(lvl)
+    ch.setFormatter(logging.Formatter("%(name)s : %(message)s"))
+    for l in modules:
+        logging.getLogger(l).addHandler(ch)
+        logging.getLogger(l).setLevel(lvl)
+    logger.debug("Config file loaded:\n%s", config)
+    asyncio.run(main())
