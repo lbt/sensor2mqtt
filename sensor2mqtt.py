@@ -43,6 +43,18 @@ async def main():
             persistent_objects.add(
                 DS18B20s(sensor_controller, pins=config["ds18b20-pins"]))
 
+        if "tsl2561" in config:
+            from sensor2mqtt.TSL2561 import TSL2561
+            tsl_config = config["tsl2561"]
+            kwargs = {}
+            for k in ("i2c-bus", "i2c-addr", "period"):
+                v = tsl_config.get(k, None)
+                if v is not None:
+                    kwargs[k] = v
+            persistent_objects.add(
+                TSL2561(sensor_controller, **kwargs)
+                )
+
         if "pir-pins" in config:
             from sensor2mqtt.PIR import PIR
             for pin in config["pir-pins"]:
