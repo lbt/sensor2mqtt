@@ -66,7 +66,7 @@ class MQController:
         try:
             await self.setup()
         except Exception as e:
-            logger.warning(f"Exception {e} thrown "
+            LOGGER.warning(f"Exception {e} thrown "
                            f"creating {self.__class__}",
                            exc_info=True)
 
